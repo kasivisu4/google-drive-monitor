@@ -1,7 +1,7 @@
 //Reference Link: https://developers.google.com/drive/api/quickstart/js
-//CLIENT_ID and API key from the developer console
-const CLIENT_ID = Process.env.CLIENT_ID;
-const API_KEY = Process.env.API_KEY;
+//Update CLIENT_ID and API key from the developer console
+const CLIENT_ID = process.env.CLIENT_ID;
+const API_KEY = process.env.API_KEY;
 
 // Discovery doc URL for APIs used by the quickstart
 const DISCOVERY_DOC =
