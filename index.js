@@ -86,7 +86,8 @@ async function listFiles() {
   try {
     response = await gapi.client.drive.files.list({
       pageSize: 10,
-      fields: "files(id,name,webContentLink,permissions(emailAddress))",
+      fields:
+        "files(id,name,webContentLink,permissions(emailAddress),mimeType)",
     });
   } catch (err) {
     document.getElementById("details").innerText = err.message;
@@ -108,7 +109,7 @@ async function listFiles() {
 
   let renderDrive = document.getElementById("driveDetails");
 
-  let keys = ["name", "emailAddress", "webContentLink", "id"];
+  let keys = ["name", "emailAddress", "webContentLink", "id", "mimeType"];
 
   let table = document.createElement("table");
   table.className = "table";
@@ -116,11 +117,13 @@ async function listFiles() {
   let thead = document.createElement("thead");
   thead.className = "thead-dark";
   let headerRow = document.createElement("tr");
-  ["File Name", "Accessible By", "Download Link", "id"].forEach(function (key) {
-    let th = document.createElement("th");
-    th.textContent = key;
-    headerRow.appendChild(th);
-  });
+  ["File Name", "Accessible By", "Download Link", "id", "mimeType"].forEach(
+    function (key) {
+      let th = document.createElement("th");
+      th.textContent = key;
+      headerRow.appendChild(th);
+    }
+  );
   thead.appendChild(headerRow);
   table.appendChild(thead);
 
@@ -139,9 +142,18 @@ async function listFiles() {
         btn.addEventListener("click", async (evt) => {
           console.log("event", evt);
           console.log("id", file.id);
-          await download(file.id);
+          await download(file.id, file.mimeType);
         });
         td.appendChild(btn);
+      } else if (value === "webContentLink") {
+        console.log("webContentLink value", file.webContentLink);
+        let a = document.createElement("a");
+        a.href = file?.webContentLink;
+        a.innerText = "Download";
+        if (!file.webContentLink) {
+          a.style = "visibility:hidden";
+        }
+        td.appendChild(a);
       } else {
         td.textContent = file[value] || "-";
       }
@@ -155,14 +167,14 @@ async function listFiles() {
 
 async function download(fileId) {
   try {
-    const file = await gapi.client.drive.files.get({
-      fileId: fileId,
-      alt: "media",
-    });
-    debugger;
-
-    console.log(file.status);
-    return file.status;
+    const webContentLink = gapi.client.drive.files
+      .get({
+        fileId: fileId,
+      })
+      .then(function (response) {
+        console.log(response.data.webContentLink);
+        return response.data.webContentLink;
+      });
   } catch (err) {
     // TODO(developer) - Handle error
     throw err;
