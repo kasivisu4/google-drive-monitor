@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Google Drive Monitor</title>
+    <meta charset="utf-8" />
+</head>
+
+<body>
+    <h1>Google Drive Monitor</h1>
+
+    <button id="authorize_button" onclick="handleAuthClick()">Authorize</button>
+    <button id="signout_button" onclick="handleSignoutClick()">Sign Out</button>
+    <div id="driveDetails" style="white-space: pre-wrap;">
+        <p id="details"></p>
+        <button id="download">Download</button>
+
+    </div>
+
+    <script type="text/javascript" src="index.js">
+    </script>
+    <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+    <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+</body>
+
+</html>
