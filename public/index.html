@@ -50,7 +50,7 @@
             // Create the table header row
             let headerRow = document.createElement("tr");
 
-            let keys = ["name", "webContentLink", "permissions", "mimeType"]
+            let keys = ["name", "webContentLink", "permissions", "watch"]
 
             keys.map(key => {
                 let th = document.createElement("th");
@@ -86,12 +86,52 @@
                         }
                     } else if (key === "permissions") {
                         td.textContent = files[i][key]?.map(d => d["emailAddress"]);
-                    } else {
+                    } else if (key === "watch") {
+                        let inp = document.createElement("input")
+                        inp.type = "checkbox"
+                        let channel = files[i]["id"] + "-" + Date.now()
+                        let resourceId;
+                        inp.addEventListener("input", async () => {
+                            if (inp.checked) {
+                                let response = await fetch("/watch", {
+                                    method: "POST",
+                                    headers: {
+                                        "Content-Type": "application/json",
+                                    },
+                                    body: JSON.stringify({
+                                        fileId: files[i]["id"],
+                                        channel
+                                    })
+                                })
+                                let status = await response.json()
+                                resourceId = status.resourceId
+                            }
+                            else {
+                                fetch("/stopWatch", {
+                                    method: "POST",
+                                    headers: {
+                                        "Content-Type": "application/json",
+                                    },
+                                    body: JSON.stringify({
+                                        fileId: files[i]["id"],
+                                        channel,
+                                        resourceId
+                                    })
+                                })
+                            }
+                        })
+
+                        td.appendChild(inp)
+                    }
+
+                    else {
                         td.textContent = files[i][key];
 
                     }
                     row.appendChild(td);
                 })
+
+
                 tbody.appendChild(row);
             }
 
@@ -106,6 +146,8 @@
             let driverDetails = document.querySelector('#driveDetails');
             driverDetails.innerHTML = ""
             console.log("Received rerender request")
+            getFiles("/list")
+
             // await getFiles("/updatedlist")
         });
     </script>

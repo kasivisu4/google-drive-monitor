@@ -106,33 +106,53 @@ app.use("/list", async function (req, res) {
     return;
   }
 
-  for (let i = 0; i < files.length; i++) {
-    let channel = {
-      id: files[i].id + Date.now(),
-      type: "web_hook",
-      address: "https://google-drive-monitor.onrender.com/update",
-    };
-
-    drive.files.watch(
-      {
-        fileId: files[i].id,
-        resource: {
-          id: channel.id,
-          type: channel.type,
-          address: channel.address,
-          expiration: Date.now() + 120000,
-        },
-      },
-      (err, response) => {
-        if (err) {
-          console.log(err);
-        } else {
-          console.log("Subscribed to changes to file");
-        }
-      }
-    );
-  }
   res.send(JSON.stringify({ files: files }));
+});
+
+app.post("/watch", function (req, res) {
+  let oauth2Client = getOAuthClient();
+  oauth2Client.setCredentials(req.session.tokens);
+
+  const drive = google.drive({ version: "v3", auth: oauth2Client });
+
+  drive.files.watch(
+    {
+      fileId: req.body.fileId,
+      resource: {
+        id: req.body.channelId,
+        type: "web_hook",
+        address: "https://google-drive-monitor.onrender.com/update",
+      },
+    },
+    (err, response) => {
+      if (err) {
+        console.log(err);
+        res.send({ subscribed: false, resourceId: response.resourceUri });
+      } else {
+        console.log("Subscribed to changes to file");
+        res.send({ subscribed: true });
+      }
+    }
+  );
+});
+
+app.post("/stopWatch", function (req, res) {
+  console.log("stopWatch");
+  let oauth2Client = getOAuthClient();
+  oauth2Client.setCredentials(req.session.tokens);
+
+  const drive = google.drive({ version: "v3", auth: oauth2Client });
+  drive.channels.stop(
+    {
+      resource: {
+        id: req.body.channelId,
+        resourceId: req.body.resourceId,
+      },
+    },
+    (err, result) => {
+      console.log("in stop watch", result, err);
+    }
+  );
 });
 
 app.use("/updatedlist", async function (req, res) {
