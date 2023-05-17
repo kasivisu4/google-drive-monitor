@@ -51,7 +51,7 @@ function getAuthUrl() {
   const oauth2Client = getOAuthClient();
 
   // generate a url that asks permissions for Google+ and Google Calendar scopes
-  const scopes = ["https://www.googleapis.com/auth/drive"];
+  const scopes = ["https://www.googleapis.com/auth/drive.readonly"];
 
   const url = oauth2Client.generateAuthUrl({
     // 'online' (default) or 'offline' (gets refresh_token)
