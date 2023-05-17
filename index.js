@@ -15,6 +15,18 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
 
+io.on("connection", (socket) => {
+  console.log("a user connected");
+  socket.on("disconnect", () => {
+    try {
+      let oauth2Client = getOAuthClient();
+      oauth2Client.setCredentials(req.session.tokens);
+    } catch (err) {
+      console.log(err);
+    }
+  });
+});
+
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(express.json());
@@ -106,53 +118,32 @@ app.use("/list", async function (req, res) {
     return;
   }
 
-  res.send(JSON.stringify({ files: files }));
-});
+  for (let i = 0; i < files.length; i++) {
+    let channel = {
+      id: files[i].id + Date.now(),
+      type: "web_hook",
+      address: "https://google-drive-monitor.onrender.com/triggerUpdate",
+    };
 
-app.post("/watch", function (req, res) {
-  let oauth2Client = getOAuthClient();
-  oauth2Client.setCredentials(req.session.tokens);
-
-  const drive = google.drive({ version: "v3", auth: oauth2Client });
-
-  drive.files.watch(
-    {
-      fileId: req.body.fileId,
-      resource: {
-        id: req.body.channel,
-        type: "web_hook",
-        address: "https://google-drive-monitor.onrender.com/update",
+    drive.files.watch(
+      {
+        fileId: files[i].id,
+        resource: {
+          id: channel.id,
+          type: channel.type,
+          address: channel.address,
+        },
       },
-    },
-    (err, response) => {
-      if (err) {
-        console.log(err);
-        res.send({ subscribed: false, resourceId: response.resourceUri });
-      } else {
-        console.log("Subscribed to changes to file");
-        res.send({ subscribed: true });
+      (err, response) => {
+        if (err) {
+          console.log(err);
+        } else {
+          console.log("Subscribed to changes to file");
+        }
       }
-    }
-  );
-});
-
-app.post("/stopWatch", function (req, res) {
-  console.log("stopWatch");
-  let oauth2Client = getOAuthClient();
-  oauth2Client.setCredentials(req.session.tokens);
-
-  const drive = google.drive({ version: "v3", auth: oauth2Client });
-  drive.channels.stop(
-    {
-      resource: {
-        id: req.body.channelId,
-        resourceId: req.body.resourceId,
-      },
-    },
-    (err, result) => {
-      console.log("in stop watch", result, err);
-    }
-  );
+    );
+  }
+  res.send(JSON.stringify({ files: files }));
 });
 
 app.use("/updatedlist", async function (req, res) {
@@ -174,7 +165,7 @@ app.use("/updatedlist", async function (req, res) {
   res.send(JSON.stringify({ files: files }));
 });
 
-app.use("/update", function (req, res) {
+app.use("/triggerUpdate", function (req, res) {
   io.emit("re-render", { render: true });
   console.log("Change", req);
 });
