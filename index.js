@@ -119,7 +119,7 @@ app.post("/watch", function (req, res) {
     {
       fileId: req.body.fileId,
       resource: {
-        id: req.body.channelId,
+        id: req.body.channel,
         type: "web_hook",
         address: "https://google-drive-monitor.onrender.com/update",
       },
