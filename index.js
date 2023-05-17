@@ -15,13 +15,6 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
 
-io.on("connection", (socket) => {
-  console.log("a user connected");
-  socket.on("disconnect", () => {
-    console.log("user disconnected");
-  });
-});
-
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(express.json());
@@ -117,7 +110,7 @@ app.use("/list", async function (req, res) {
     let channel = {
       id: files[i].id + Date.now(),
       type: "web_hook",
-      address: "https://google-drive-monitor.onrender.com/triggerUpdate",
+      address: "https://google-drive-monitor.onrender.com/update",
     };
 
     drive.files.watch(
@@ -127,6 +120,7 @@ app.use("/list", async function (req, res) {
           id: channel.id,
           type: channel.type,
           address: channel.address,
+          expiration: Date.now() + 120000,
         },
       },
       (err, response) => {
@@ -160,7 +154,7 @@ app.use("/updatedlist", async function (req, res) {
   res.send(JSON.stringify({ files: files }));
 });
 
-app.use("/triggerUpdate", function (req, res) {
+app.use("/update", function (req, res) {
   io.emit("re-render", { render: true });
   console.log("Change", req);
 });
