@@ -41,7 +41,7 @@
 
             // Create the table element
             let table = document.createElement("table");
-            table.className = "table";
+            table.className = "table file-details";
 
             let header = document.createElement("thead");
             header.className = "thead-dark";
@@ -103,6 +103,7 @@
         getFiles("/list")
         let socket = io("https://google-drive-monitor.onrender.com");
         socket.on("re-render", async (message) => {
+            let driverDetails = document.querySelector('#driveDetails');
             driverDetails.innerHTML = ""
             console.log("Received rerender request")
             await getFiles("/updatedlist")
