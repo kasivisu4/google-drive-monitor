@@ -142,7 +142,7 @@ app.use("/list", async function (req, res) {
 });
 
 app.use("/change", function (req, res) {
-  socket.emit("re-render", { render: true });
+  io.emit("re-render", { render: true });
   console.log("Change");
 });
 
