@@ -115,7 +115,7 @@ app.use("/list", async function (req, res) {
 
   for (let i = 0; i < files.length; i++) {
     let channel = {
-      id: files[i].id + new Date(),
+      id: files[i].id + Date.now(),
       type: "web_hook",
       address: "https://google-drive-monitor.onrender.com/change",
     };
