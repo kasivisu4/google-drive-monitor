@@ -106,11 +106,9 @@
         getFiles("/list")
         let socket = io("https://google-drive-monitor.onrender.com");
         socket.on("re-render", async (message) => {
-            let driverDetails = document.querySelector('#driveDetails');
-            driverDetails.innerHTML = ""
+            let tables = Array.from(document.querySelectorAll('.table'))
+            tables.forEach(d => d?.remove())
             console.log("Received rerender request")
-            // getFiles("/list")
-
             await getFiles("/updatedlist")
         });
     </script>
