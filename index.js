@@ -141,6 +141,25 @@ app.use("/list", async function (req, res) {
   res.send(JSON.stringify({ files: files }));
 });
 
+app.use("/updatedlist", async function (req, res) {
+  let oauth2Client = getOAuthClient();
+  oauth2Client.setCredentials(req.session.tokens);
+
+  const drive = google.drive({ version: "v3", auth: oauth2Client });
+  const response = await drive.files.list({
+    pageSize: 10,
+    fields: "files(id, name,webContentLink,permissions(emailAddress),mimeType)",
+  });
+
+  const files = response.data.files;
+
+  if (files.length === 0) {
+    console.log("No files found.");
+    return;
+  }
+  res.send(JSON.stringify({ files: files }));
+});
+
 app.use("/change", function (req, res) {
   io.emit("re-render", { render: true });
   console.log("Change");

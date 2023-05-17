@@ -29,11 +29,11 @@
         </div>
     </div>
     <script>
-        async function getFiles() {
+        async function getFiles(api) {
 
             let driverDetails = document.querySelector('#driveDetails');
 
-            let response = await fetch("/list")
+            let response = await fetch(api)
             let { files } = await response.json()
 
 
@@ -98,14 +98,15 @@
             // Append the table to the container
             driverDetails.appendChild(table);
         }
-        getFiles()
+        getFiles("/list")
     </script>
     <script src="/socket.io/socket.io.js"></script>
     <script>
         let socket = io("https://google-drive-monitor.onrender.com");
         socket.on("re-render", message => {
+            document.querySelector("#table").remove()
             console.log("Received rerender request")
-            getFiles()
+            getFiles("/updatedlist")
         });
 
     </script>
