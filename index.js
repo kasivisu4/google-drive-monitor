@@ -21,6 +21,7 @@ io.on("connection", (socket) => {
     try {
       let oauth2Client = getOAuthClient();
       oauth2Client.setCredentials(req.session.tokens);
+      io.socket.removeAllListeners();
     } catch (err) {
       console.log(err);
     }
