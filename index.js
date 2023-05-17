@@ -11,6 +11,17 @@ const RedirectionUrl = process.env.REDIRECT_URL;
 
 const app = express();
 
+const server = http.createServer(app);
+const { Server } = require("socket.io");
+const io = new Server(server);
+
+io.on("connection", (socket) => {
+  console.log("a user connected");
+  socket.on("disconnect", () => {
+    console.log("user disconnected");
+  });
+});
+
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(express.json());
@@ -131,6 +142,7 @@ app.use("/list", async function (req, res) {
 });
 
 app.use("/change", function (req, res) {
+  socket.emit("re-render", { render: true });
   console.log("Change");
 });
 
@@ -142,7 +154,6 @@ app.use("/", function (req, res) {
 });
 
 let port = 5500;
-let server = http.createServer(app);
 server.listen(port);
 server.on("listening", function () {
   console.log(`listening to ${port}`);
