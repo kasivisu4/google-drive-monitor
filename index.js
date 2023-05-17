@@ -78,22 +78,22 @@ app.use("/oauth2callback", function (req, res) {
   });
 });
 
-// Downloads a file from Google Drive using the file ID
+// // Downloads a file from Google Drive using the file ID
 
-app.use("/download", async function (req, res) {
-  let fileId = req.body.fileId;
-  let oauth2Client = getOAuthClient();
-  oauth2Client.setCredentials(req.body.token);
+// app.use("/download", async function (req, res) {
+//   let fileId = req.body.fileId;
+//   let oauth2Client = getOAuthClient();
+//   oauth2Client.setCredentials(req.body.token);
 
-  const drive = google.drive({ version: "v3", auth: oauth2Client });
+//   const drive = google.drive({ version: "v3", auth: oauth2Client });
 
-  const response = await drive.files.export({
-    fileId: fileId,
-    mimeType: "application/pdf", // Replace with the desired export format
-  });
+//   const response = await drive.files.export({
+//     fileId: fileId,
+//     mimeType: "application/pdf", // Replace with the desired export format
+//   });
 
-  const downloadUrl = fileData.webContentLink;
-});
+//   const downloadUrl = fileData.webContentLink;
+// });
 
 app.use("/list", async function (req, res) {
   console.log("session", req.session);
@@ -117,7 +117,7 @@ app.use("/list", async function (req, res) {
     let channel = {
       id: files[i].id + Date.now(),
       type: "web_hook",
-      address: "https://google-drive-monitor.onrender.com/change",
+      address: "https://google-drive-monitor.onrender.com/triggerUpdate",
     };
 
     drive.files.watch(
@@ -160,9 +160,9 @@ app.use("/updatedlist", async function (req, res) {
   res.send(JSON.stringify({ files: files }));
 });
 
-app.use("/change", function (req, res) {
+app.use("/triggerUpdate", function (req, res) {
   io.emit("re-render", { render: true });
-  console.log("Change");
+  console.log("Change", req);
 });
 
 app.use("/", function (req, res) {

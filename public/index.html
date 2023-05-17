@@ -104,7 +104,7 @@
     <script>
         let socket = io("https://google-drive-monitor.onrender.com");
         socket.on("re-render", message => {
-            document.querySelector(".table").remove()
+            document.querySelector(".table")?.remove()
             console.log("Received rerender request")
             getFiles("/updatedlist")
         });
