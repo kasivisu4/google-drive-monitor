@@ -122,7 +122,7 @@ app.use("/list", async function (req, res) {
     let channel = {
       id: files[i].id + Date.now(),
       type: "web_hook",
-      address: "https://google-drive-monitor.onrender.com/triggerUpdate",
+      address: "https://google-drive-monitor.onrender.com/triggerUpdatev1",
     };
 
     drive.files.watch(
@@ -165,7 +165,7 @@ app.use("/updatedlist", async function (req, res) {
   res.send(JSON.stringify({ files: files }));
 });
 
-app.use("/triggerUpdate", function (req, res) {
+app.use("/triggerUpdatev1", function (req, res) {
   io.emit("re-render", { render: true });
   console.log("Change", req);
 });
