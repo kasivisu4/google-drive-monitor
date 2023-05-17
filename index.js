@@ -1,15 +1,15 @@
-let http = require("http");
-let express = require("express");
-let Session = require("express-session");
-let { google } = require("googleapis");
-let bodyParser = require("body-parser");
+const http = require("http");
+const express = require("express");
+const Session = require("express-session");
+const { google } = require("googleapis");
+const bodyParser = require("body-parser");
 
 require("dotenv").config();
 const ClientId = process.env.CLIENT_ID;
 const ClientSecret = process.env.CLIENT_SECRET;
 const RedirectionUrl = process.env.REDIRECT_URL;
 
-let app = express();
+const app = express();
 
 app.use(bodyParser.urlencoded({ extended: true }));
 
@@ -23,6 +23,10 @@ app.use(
   })
 );
 
+app.engine("html", require("ejs").renderFile);
+app.set("view engine", "html");
+app.set("views", __dirname);
+
 function getOAuthClient() {
   return new google.auth.OAuth2(ClientId, ClientSecret, RedirectionUrl);
 }
@@ -31,7 +35,7 @@ function getAuthUrl() {
   const oauth2Client = getOAuthClient();
 
   // generate a url that asks permissions for Google+ and Google Calendar scopes
-  let scopes = ["https://www.googleapis.com/auth/drive"];
+  const scopes = ["https://www.googleapis.com/auth/drive"];
 
   const url = oauth2Client.generateAuthUrl({
     // 'online' (default) or 'offline' (gets refresh_token)
@@ -45,15 +49,16 @@ function getAuthUrl() {
 }
 
 app.use("/oauth2callback", function (req, res) {
-  let oauth2Client = getOAuthClient();
-  let session = req.session;
-  let code = req.query.code;
+  const oauth2Client = getOAuthClient();
+  const session = req.session;
+  const code = req.query.code;
   oauth2Client.getToken(code, async function (err, tokens) {
     // Now tokens contains an access_token and an optional refresh_token. Save them.
     if (!err) {
       oauth2Client.setCredentials(tokens);
       session["tokens"] = tokens;
-      res.redirect("/home");
+      console.log("authorized rendering index file");
+      res.sendFile(__dirname + "/public/index.html");
     } else {
       res.send(`
             <h3>Login failed!!</h3>
@@ -62,60 +67,78 @@ app.use("/oauth2callback", function (req, res) {
   });
 });
 
-app.use("/home", async function (req, res) {
-  console.log(req.session.tokens.access_token);
-  let files = await fetch("http://localhost:5500/list", {
-    method: "POST",
-    body: JSON.stringify({ token: req.session.tokens.access_token }),
-  });
-  res.send(`${files}`);
-});
+// Downloads a file from Google Drive using the file ID
 
-app.post("/list", async function (req, res) {
-  console.log(req);
+app.use("/download", async function (req, res) {
+  let fileId = req.body.fileId;
   let oauth2Client = getOAuthClient();
   oauth2Client.setCredentials(req.body.token);
 
   const drive = google.drive({ version: "v3", auth: oauth2Client });
+
+  const response = await drive.files.export({
+    fileId: fileId,
+    mimeType: "application/pdf", // Replace with the desired export format
+  });
+
+  const downloadUrl = fileData.webContentLink;
+});
+
+app.use("/list", async function (req, res) {
+  console.log("session", req.session);
+  let oauth2Client = getOAuthClient();
+  oauth2Client.setCredentials(req.session.tokens);
+
+  const drive = google.drive({ version: "v3", auth: oauth2Client });
   const response = await drive.files.list({
     pageSize: 10,
-    fields: "nextPageToken, files(id, name)",
+    fields: "files(id, name,webContentLink,permissions(emailAddress),mimeType)",
   });
+
   const files = response.data.files;
+
   if (files.length === 0) {
     console.log("No files found.");
     return;
   }
 
-  return files;
+  for (let i = 0; i < files.length; i++) {
+    let channel = {
+      id: files[i].id,
+      type: "web_hook",
+      address: "https://kasivisu4.github.io/google-drive-monitor/change",
+    };
+
+    drive.files.watch(
+      {
+        fileId: files[i].id,
+        resource: {
+          id: channel.id,
+          type: channel.type,
+          address: channel.address,
+        },
+      },
+      (err, response) => {
+        if (err) {
+          console.log(err);
+        } else {
+          console.log("Subscribed to changes to file");
+        }
+      }
+    );
+  }
+  res.send(JSON.stringify({ files: files }));
+});
+
+app.use("/change", function (req, res) {
+  console.log("Change");
 });
 
 app.use("/", function (req, res) {
   let url = getAuthUrl();
-  res.send(`
-  <h1 style="text-align: center;padding:20px">Google Drive Monitor</h1>
-  <div style="padding:20px">
-      <div style="display:flex;justify-content:space-around">
-          <p>*This page helps you to monitor only files present in your google drive</p>
-          <div>
-
-              <div style="display: flex">
-                  <label>Status: </label>
-                  <div id="status" style="padding-left:10px"> Not Connected ⚠️</div>
-              </div>
-              <div style="padding:10px;padding-left:50px">
-                  <button id="authorize_button" class="btn btn-primary"><a href=${url}  class="link-dark" style='text-decoration: none;'>Connect</a></button>
-              </div>
-          </div>
-      </div>
-  </div>
-  </script>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet"
-      integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ" crossorigin="anonymous">
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"
-      integrity="sha384-ENjdO4Dr2bkBIFxQpeoTz1HIcje39Wm4jDKdf19U8gI4ddQ3GYNS7NTKfAdVQSZe"
-      crossorigin="anonymous"></script>
-      `);
+  res.render(__dirname + "/public/connect.html", {
+    url,
+  });
 });
 
 let port = 5500;
